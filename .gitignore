@@ -1,2 +1,4 @@
 build/
 data/library.tsv
+
+java_frontend/target/

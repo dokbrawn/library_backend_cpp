@@ -160,3 +160,56 @@ $env:LIBRARY_PG_CONN = "host=localhost port=5432 dbname=library user=postgres pa
 - удаление по `id`;
 - подгрузка книги из OpenLibrary API;
 - вывод OBST.
+
+## Запуск Java frontend (новый вариант)
+
+Добавлен отдельный Java/Swing frontend в папке `java_frontend`.
+
+Сборка:
+
+```bash
+cd library_backend_cpp/java_frontend
+mvn package
+```
+
+Запуск:
+
+```bash
+cd /workspace/library_backend_cpp
+java -jar java_frontend/target/java-frontend-1.0.0.jar
+```
+
+В UI можно:
+- инициализировать backend (`init`);
+- просматривать список книг (`list`);
+- выполнять поиск (`search`);
+- сортировать (`sort`).
+
+Поле `Backend binary path` позволяет задать путь к бинарнику `library_backend` вручную.
+
+## Отдельная папка для ARM запуска
+
+Создана папка `java_frontend_arm` для запуска Java frontend в ARM64-контейнере.
+
+1. Соберите JAR:
+```bash
+cd /workspace/library_backend_cpp/java_frontend
+mvn package
+```
+
+2. Соберите ARM-образ:
+```bash
+cd /workspace/library_backend_cpp
+docker build -f java_frontend_arm/Dockerfile -t library-java-frontend:arm64 .
+```
+
+3. Запустите контейнер (при необходимости передайте backend для ARM):
+```bash
+docker run --rm -it \
+  -e LIBRARY_PG_CONN="host=localhost port=5432 dbname=library user=postgres password=123" \
+  -e BACKEND_PATH="/app/backend/library_backend" \
+  -v /path/to/arm/backend:/app/backend \
+  library-java-frontend:arm64
+```
+
+Это изолирует ARM-окружение в отдельной папке/образе, при том что основной C++ проект можно продолжать тестировать в Windows.
