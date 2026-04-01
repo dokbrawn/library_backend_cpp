@@ -943,19 +943,32 @@ vector<OpenLibraryCandidate> LibraryBackendService::lookupOpenLibrary(const stri
         circuitBreakerUntil_ = {};
     }
     
-    const string url = "https://openlibrary.org/search.json?q=" + urlEncode(normalized) +
-        "&limit=" + to_string(limit) +
-        "&fields=title,author_name,first_publish_year,isbn,publisher,cover_i,language,subject,rating_average,first_sentence";
+    auto buildOpenLibraryUrl = [&](const string& mode) {
+        string base = "https://openlibrary.org/search.json?";
+        if (mode == "title") base += "title=" + urlEncode(normalized);
+        else base += "q=" + urlEncode(normalized);
+        base += "&limit=" + to_string(limit) +
+            "&fields=title,author_name,first_publish_year,isbn,publisher,cover_i,language,subject,rating_average,first_sentence";
+        return base;
+    };
     
     string resp;
     bool ok = false;
     for (int attempt = 0; attempt < MAX_RETRIES; ++attempt) {
         const string cmd = withSilentStderr(
-            "curl -fsSL --max-time 12 -H \"User-Agent: LibraryCPP/1.0\" \"" + url + "\"");
+            "curl -fsSL --max-time 12 -H \"User-Agent: LibraryCPP/1.0\" \"" + buildOpenLibraryUrl("q") + "\"");
         resp = readCommandOutput(cmd);
         if (!resp.empty() && resp.find("\"docs\"") != string::npos) { ok = true; break; }
         logMessage("WARN", "OpenLibrary attempt " + to_string(attempt+1) + " failed");
         if (attempt < MAX_RETRIES - 1) this_thread::sleep_for(chrono::milliseconds(RETRY_DELAY_MS));
+    }
+
+    if (!ok) {
+        // Fallback: OpenLibrary title=... часто лучше для коротких/кириллических запросов.
+        const string cmd = withSilentStderr(
+            "curl -fsSL --max-time 12 -H \"User-Agent: LibraryCPP/1.0\" \"" + buildOpenLibraryUrl("title") + "\"");
+        resp = readCommandOutput(cmd);
+        if (!resp.empty() && resp.find("\"docs\"") != string::npos) ok = true;
     }
     
     if (!ok) {

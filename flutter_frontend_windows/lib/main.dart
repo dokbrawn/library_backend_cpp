@@ -67,6 +67,7 @@ class _LibraryHomePageState extends State<LibraryHomePage> {
   String lookupSource = 'openlibrary';
   bool fetchNetworkOnSave = true;
   bool loading = false;
+  bool editorVisible = false;
 
   List<BookRow> books = [];
   List<LookupCandidate> candidates = [];
@@ -103,7 +104,15 @@ class _LibraryHomePageState extends State<LibraryHomePage> {
     final cmd = lookupSource == 'openlibrary' ? 'lookup' : 'lookup-google';
     final result = await _runBackend([cmd, lookupCtrl.text.trim(), '15']);
     if (result.exitCode == 0) {
-      setState(() => candidates = parseCandidates(result.stdout));
+      final parsed = parseCandidates(result.stdout);
+      if (parsed.isEmpty && cmd == 'lookup') {
+        final fallback = await _runBackend(['lookup-google', lookupCtrl.text.trim(), '15']);
+        if (fallback.exitCode == 0) {
+          setState(() => candidates = parseCandidates(fallback.stdout));
+        }
+      } else {
+        setState(() => candidates = parsed);
+      }
     }
   }
 
@@ -306,6 +315,11 @@ class _LibraryHomePageState extends State<LibraryHomePage> {
     setState(() => selectedBookId = null);
   }
 
+  void _startCreateNewBook() {
+    _clearForm();
+    setState(() => editorVisible = true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -317,9 +331,11 @@ class _LibraryHomePageState extends State<LibraryHomePage> {
       ),
       body: Row(
         children: [
-          Expanded(flex: 5, child: _buildCatalogPane()),
-          const VerticalDivider(width: 1),
-          Expanded(flex: 4, child: _buildEditorPane()),
+          Expanded(flex: editorVisible ? 5 : 1, child: _buildCatalogPane()),
+          if (editorVisible) ...[
+            const VerticalDivider(width: 1),
+            Expanded(flex: 4, child: _buildEditorPane()),
+          ]
         ],
       ),
     );
@@ -347,6 +363,7 @@ class _LibraryHomePageState extends State<LibraryHomePage> {
             children: [
               SizedBox(width: 220, child: TextField(controller: searchCtrl, decoration: const InputDecoration(labelText: 'Поиск по названию/автору'))),
               FilledButton(onPressed: loading ? null : _search, child: const Text('Поиск')),
+              FilledButton.tonal(onPressed: loading ? null : _startCreateNewBook, child: const Text('Добавить книгу')),
               DropdownButton<String>(
                 value: sortField,
                 items: sortFields
@@ -390,7 +407,10 @@ class _LibraryHomePageState extends State<LibraryHomePage> {
                 final selected = selectedBookId != null && selectedBookId.toString() == b.id;
                 return InkWell(
                   onTap: () {
-                    setState(() => selectedBookId = int.tryParse(b.id));
+                    setState(() {
+                      selectedBookId = int.tryParse(b.id);
+                      editorVisible = true;
+                    });
                     _fillForm(b);
                   },
                   child: Card(
@@ -491,11 +511,14 @@ class _LibraryHomePageState extends State<LibraryHomePage> {
               OutlinedButton(onPressed: _clearForm, child: const Text('Очистить форму')),
               OutlinedButton.icon(
                 onPressed: () {
-                  setState(() => selectedBookId = null);
+                  setState(() {
+                    selectedBookId = null;
+                    editorVisible = false;
+                  });
                   FocusScope.of(context).unfocus();
                 },
                 icon: const Icon(Icons.exit_to_app),
-                label: const Text('Выйти из редактирования'),
+                label: const Text('Закрыть панель редактирования'),
               ),
             ]),
             const Divider(height: 28),
