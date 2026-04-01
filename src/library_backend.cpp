@@ -15,6 +15,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <codecvt>
 #include <libpq-fe.h>
 using namespace std;
 namespace fs = filesystem;
@@ -86,6 +87,20 @@ static string readCommandOutput(const string& command) {
     return output;
 }
 
+static string withSilentStderr(string command) {
+#ifdef _WIN32
+    command += " 2>NUL";
+#else
+    command += " 2>/dev/null";
+#endif
+    return command;
+}
+
+static void silentPgNoticeProcessor(void* /*arg*/, const char* /*message*/) {
+    // Intentionally suppress PostgreSQL NOTICE messages like
+    // "relation already exists, skipping" from user-facing stderr.
+}
+
 // ==================== JSON ПАРСЕР ====================
 static string jsonStringFromArray(const string& object, const string& key) {
     const string marker = "\"" + key + "\"";
@@ -106,6 +121,12 @@ static string jsonStringField(const string& object, const string& key) {
     const size_t quote2 = object.find('"', quote1 + 1);
     if (quote1 == string::npos || quote2 == string::npos) return {};
     return object.substr(quote1 + 1, quote2 - quote1 - 1);
+}
+
+static string jsonFlexibleTextField(const string& object, const string& key) {
+    string direct = jsonStringField(object, key);
+    if (!direct.empty()) return direct;
+    return jsonStringFromArray(object, key);
 }
 
 static int jsonIntField(const string& object, const string& key) {
@@ -170,9 +191,16 @@ static string trim(const string& value) {
 
 static string normalizeLower(const string& value) {
     string out = trim(value);
-    transform(out.begin(), out.end(), out.begin(), [](unsigned char c) {
-        return static_cast<char>(tolower(c));
-    });
+    try {
+        wstring_convert<codecvt_utf8<wchar_t>> conv;
+        wstring ws = conv.from_bytes(out);
+        for (auto& ch : ws) ch = towlower(ch);
+        out = conv.to_bytes(ws);
+    } catch (...) {
+        transform(out.begin(), out.end(), out.begin(), [](unsigned char c) {
+            return static_cast<char>(tolower(c));
+        });
+    }
     return out;
 }
 
@@ -368,6 +396,7 @@ bool LibraryStorage::open() {
         PQfinish(conn);
         return false;
     }
+    PQsetNoticeProcessor(conn, silentPgNoticeProcessor, nullptr);
     db_ = conn;
     ensureImagesDir();
     return true;
@@ -914,18 +943,32 @@ vector<OpenLibraryCandidate> LibraryBackendService::lookupOpenLibrary(const stri
         circuitBreakerUntil_ = {};
     }
     
-    const string url = "https://openlibrary.org/search.json?q=" + urlEncode(normalized) +
-        "&limit=" + to_string(limit) +
-        "&fields=title,author_name,first_publish_year,isbn,publisher,cover_i,language,subject,rating_average";
+    auto buildOpenLibraryUrl = [&](const string& mode) {
+        string base = "https://openlibrary.org/search.json?";
+        if (mode == "title") base += "title=" + urlEncode(normalized);
+        else base += "q=" + urlEncode(normalized);
+        base += "&limit=" + to_string(limit) +
+            "&fields=title,author_name,first_publish_year,isbn,publisher,cover_i,language,subject,rating_average,first_sentence";
+        return base;
+    };
     
     string resp;
     bool ok = false;
     for (int attempt = 0; attempt < MAX_RETRIES; ++attempt) {
-        const string cmd = "curl -fsSL --max-time 5 -H \"User-Agent: LibraryCPP/1.0\" \"" + url + "\"";
+        const string cmd = withSilentStderr(
+            "curl -fsSL --max-time 12 -H \"User-Agent: LibraryCPP/1.0\" \"" + buildOpenLibraryUrl("q") + "\"");
         resp = readCommandOutput(cmd);
         if (!resp.empty() && resp.find("\"docs\"") != string::npos) { ok = true; break; }
         logMessage("WARN", "OpenLibrary attempt " + to_string(attempt+1) + " failed");
         if (attempt < MAX_RETRIES - 1) this_thread::sleep_for(chrono::milliseconds(RETRY_DELAY_MS));
+    }
+
+    if (!ok) {
+        // Fallback: OpenLibrary title=... часто лучше для коротких/кириллических запросов.
+        const string cmd = withSilentStderr(
+            "curl -fsSL --max-time 12 -H \"User-Agent: LibraryCPP/1.0\" \"" + buildOpenLibraryUrl("title") + "\"");
+        resp = readCommandOutput(cmd);
+        if (!resp.empty() && resp.find("\"docs\"") != string::npos) ok = true;
     }
     
     if (!ok) {
@@ -950,6 +993,7 @@ vector<OpenLibraryCandidate> LibraryBackendService::lookupOpenLibrary(const stri
         candidate.language = jsonStringFromArray(doc, "language");
         candidate.isbn = jsonStringFromArray(doc, "isbn");
         candidate.year = jsonIntField(doc, "first_publish_year");
+        candidate.description = jsonFlexibleTextField(doc, "first_sentence");
         
         // ИСПРАВЛЕНО: Извлекаем рейтинг
         candidate.rating = jsonDoubleField(doc, "rating_average");
@@ -994,7 +1038,8 @@ vector<OpenLibraryCandidate> LibraryBackendService::lookupGoogleBooks(const stri
     string resp;
     bool ok = false;
     for (int attempt = 0; attempt < MAX_RETRIES; ++attempt) {
-        const string cmd = "curl -fsSL --max-time 5 -H \"User-Agent: LibraryCPP/1.0\" \"" + url + "\"";
+        const string cmd = withSilentStderr(
+            "curl -fsSL --max-time 12 -H \"User-Agent: LibraryCPP/1.0\" \"" + url + "\"");
         resp = readCommandOutput(cmd);
         logMessage("DEBUG", "Google Books response length: " + to_string(resp.length()));
         if (!resp.empty() && resp.find("\"items\"") != string::npos) {
@@ -1169,6 +1214,7 @@ string serializeOpenLibraryCandidates(const vector<OpenLibraryCandidate>& candid
             << "year=" << item.year << "\n"
             << "genre=" << escapeValue(item.genre) << "\n"
             << "subgenre=" << escapeValue(item.subgenre) << "\n"
+            << "description=" << escapeValue(item.description) << "\n"
             << "rating=" << item.rating << "\n"
             << "END_CANDIDATE\n";
     }
