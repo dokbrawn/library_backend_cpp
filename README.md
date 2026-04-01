@@ -160,3 +160,137 @@ $env:LIBRARY_PG_CONN = "host=localhost port=5432 dbname=library user=postgres pa
 - удаление по `id`;
 - подгрузка книги из OpenLibrary API;
 - вывод OBST.
+
+## Запуск Java frontend (новый вариант)
+
+Добавлен отдельный Java/Swing frontend в папке `java_frontend`.
+
+Сборка:
+
+```bash
+cd library_backend_cpp/java_frontend
+mvn package
+```
+
+Запуск:
+
+```bash
+cd /workspace/library_backend_cpp
+java -jar java_frontend/target/java-frontend-1.0.0.jar
+```
+
+В UI можно:
+- инициализировать backend (`init`);
+- просматривать список книг (`list`) в карточном виде;
+- выполнять поиск (`search`);
+- сортировать (`sort`);
+- видеть обложки книг (из `cover_image_path` или `cover_url`) и ключевые метаданные на карточке.
+
+Поле `Backend binary path` позволяет задать путь к бинарнику `library_backend` вручную.
+
+## Отдельная папка для ARM запуска
+
+Создана папка `java_frontend_arm` для запуска Java frontend в ARM64-контейнере.
+
+1. Соберите JAR:
+```bash
+cd /workspace/library_backend_cpp/java_frontend
+mvn package
+```
+
+2. Соберите ARM-образ:
+```bash
+cd /workspace/library_backend_cpp
+docker build -f java_frontend_arm/Dockerfile -t library-java-frontend:arm64 .
+```
+
+3. Запустите контейнер (при необходимости передайте backend для ARM):
+```bash
+docker run --rm -it \
+  -e LIBRARY_PG_CONN="host=localhost port=5432 dbname=library user=postgres password=123" \
+  -e BACKEND_PATH="/app/backend/library_backend" \
+  -v /path/to/arm/backend:/app/backend \
+  library-java-frontend:arm64
+```
+
+Это изолирует ARM-окружение в отдельной папке/образе, при том что основной C++ проект можно продолжать тестировать в Windows.
+
+## Flutter frontend (новый основной GUI)
+
+По вашему ТЗ добавлен новый фронтенд на Flutter с акцентом на современный карточный интерфейс и полный вызов backend-команд (логика в backend, интерфейс во frontend).
+
+### Папка для Windows
+- `flutter_frontend_windows`
+- содержит Flutter приложение (`lib/main.dart`) и PowerShell-скрипт запуска `run-windows.ps1`.
+
+Запуск в PowerShell:
+
+```powershell
+cd library_backend_cpp
+cmake -S . -B build
+cmake --build build --config Release
+
+cd .\flutter_frontend_windows
+.\run-windows.ps1 -BackendPath "..\build\Release\library_backend.exe" -PgConn "host=localhost port=5432 dbname=library user=postgres password=123"
+```
+
+### Папка для ARM
+- `flutter_frontend_arm`
+- содержит отдельный `Dockerfile` и скрипт `run-arm.sh`.
+
+Запуск ARM-сценария:
+
+```bash
+cd /workspace/library_backend_cpp
+./flutter_frontend_arm/run-arm.sh
+```
+
+### Что покрыто во Flutter UI
+- Полный вызов backend-команд:
+  - `init`, `list`, `search`, `sort`, `binary-search`, `obst`, `upsert`, `remove`, `lookup`, `lookup-google`.
+- CRUD-форма книги со всеми полями, используемыми backend сериализацией.
+- Подгрузка кандидатов из OpenLibrary / Google Books и перенос в форму книги.
+- Карточная витрина книг с обложками (локальный путь или URL), выделением выбранной карточки и редактированием.
+- Backend-логи в UI, чтобы видеть stderr/exit-коды каждой операции.
+
+### Важные уточнения по алгоритмам в UI
+- **QuickSort**: выполняется командой backend `sort` (в UI это кнопка `QuickSort`).
+- **OBST**: кнопка `OBST` теперь открывает отдельное окно со списком узлов дерева (`key/book_id/left/right`), а не только пишет в лог.
+- **Binary Search**: сначала вызывается backend `binary-search`; если backend не вернул результат (часто на смешанной локали/регистре), frontend автоматически делает fallback на `search`, чтобы кириллица и mixed-language запросы находились корректно.
+- **Сортировка по фамилии**: выбирайте поле `author (surname)` — backend сортирует авторов по извлечённой фамилии.
+- В сетевом поиске (`lookup`) теперь дополнительно подтягивается краткое описание (`first_sentence`, если доступно), а также жанр/рейтинг.
+- Если рейтинг не пришёл в `search.json`, backend делает дополнительный запрос к `.../works/<id>/ratings.json` и пытается взять средний рейтинг оттуда.
+- Таймауты `curl` смягчены (увеличен лимит ожидания), а служебные PostgreSQL NOTICE-сообщения скрыты из пользовательского stderr, чтобы лог в UI был чище.
+- Для OpenLibrary добавлен fallback-запрос по `title=...` (если обычный `q=...` не дал валидного результата), что улучшает кейсы с кириллицей.
+- Кнопка **«Добавить книгу»** открывает пустую форму, а кнопка **«Закрыть панель редактирования»** полностью прячет правую панель, чтобы видеть только список книг.
+
+### Телефон / ARM / перенос
+- Текущий Flutter UI рассчитан на desktop-сценарий, где запускается **локальный `library_backend` бинарник**.
+- Для ARM (Linux ARM64) используйте папку `flutter_frontend_arm` (Docker/run-script).
+- Для телефона (Android/iOS) сам UI можно собрать, но backend-CLI как отдельный процесс там не запускается так же, как на Windows/Linux desktop; нужен отдельный мобильный backend-слой (FFI/embedded service/API).
+
+#### Пошагово: перенос на ARM (Linux ARM64, например Raspberry Pi)
+1. На ARM-устройстве установите Docker.
+2. Скопируйте проект на устройство.
+3. Выполните:
+   ```bash
+   cd library_backend_cpp
+   ./flutter_frontend_arm/run-arm.sh
+   ```
+4. Если хотите нативный ARM запуск без Docker:
+   - соберите `library_backend` под ARM (`cmake -S . -B build && cmake --build build`);
+   - в `flutter_frontend_windows` выполните `flutter pub get` и `flutter run -d linux`;
+   - перед запуском задайте `LIBRARY_BACKEND_BIN` на ARM-бинарник backend.
+
+#### Пошагово: перенос на телефон (Android)
+На сегодня это **не просто “скопировать папку”**, потому что текущая архитектура запускает desktop CLI-процесс backend.
+Рабочий путь для телефона:
+1. Оставить Flutter UI.
+2. Вынести backend в мобильный API/FFI-слой (например, C++ как библиотека через FFI или отдельный локальный сервис).
+3. Заменить в Flutter вызовы `Process.start(...)` на вызовы этого слоя.
+4. Собрать APK:
+   ```bash
+   cd flutter_frontend_windows
+   flutter build apk --release
+   ```
+5. Установить APK на телефон (`adb install build/app/outputs/flutter-apk/app-release.apk`).

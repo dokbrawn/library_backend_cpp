@@ -49,6 +49,7 @@ struct OpenLibraryCandidate {
     string coverUrl;
     string genre;
     string subgenre;
+    string description;
     int year = 0;
     double rating = 0.0;
     // double price = 0.0;  // ❌ УДАЛЕНО
