@@ -1,2 +1,10 @@
 build/
 data/library.tsv
+
+java_frontend/target/
+
+flutter_frontend_windows/.dart_tool/
+flutter_frontend_windows/build/
+flutter_frontend_windows/.flutter-plugins
+flutter_frontend_windows/.flutter-plugins-dependencies
+flutter_frontend_windows/.packages
