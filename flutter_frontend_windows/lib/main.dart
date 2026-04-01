@@ -546,7 +546,7 @@ class _LibraryHomePageState extends State<LibraryHomePage> {
                       title: Text('${c.title} — ${c.author}'),
                       subtitle: Text(
                         'ISBN: ${c.isbn} | ${c.publisher} | ${c.year}\n'
-                        'Жанр: ${c.genre.isEmpty ? "-" : c.genre} | Рейтинг: ${c.rating.isEmpty ? "-" : c.rating}\n'
+                        'Жанр: ${c.genre.isEmpty ? "-" : c.genre} | Рейтинг: ${_displayRating(c.rating)}\n'
                         '${c.description.isEmpty ? "Описание не найдено" : c.description}',
                         maxLines: 4,
                         overflow: TextOverflow.ellipsis,
@@ -704,4 +704,10 @@ String _detectBackendPath() {
     if (File(p).existsSync()) return p;
   }
   return 'build/Release/library_backend.exe';
+}
+
+String _displayRating(String raw) {
+  final v = double.tryParse(raw.trim());
+  if (v == null || v <= 0) return 'нет данных';
+  return v.toStringAsFixed(1);
 }

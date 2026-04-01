@@ -157,6 +157,18 @@ static double jsonDoubleField(const string& object, const string& key) {
     return atof(object.substr(begin, end - begin).c_str());
 }
 
+static double fetchOpenLibraryWorkRating(const string& workKey) {
+    if (workKey.empty() || workKey.rfind("/works/", 0) != 0) return 0.0;
+    const string url = "https://openlibrary.org" + workKey + "/ratings.json";
+    const string cmd = withSilentStderr(
+        "curl -fsSL --max-time 8 -H \"User-Agent: LibraryCPP/1.0\" \"" + url + "\"");
+    const string resp = readCommandOutput(cmd);
+    if (resp.empty()) return 0.0;
+    double avg = jsonDoubleField(resp, "average");
+    if (avg <= 0.0) avg = jsonDoubleField(resp, "average_rating");
+    return avg;
+}
+
 static vector<string> extractDocObjects(const string& json) {
     vector<string> docs;
     const size_t docsKey = json.find("\"docs\"");
@@ -994,11 +1006,15 @@ vector<OpenLibraryCandidate> LibraryBackendService::lookupOpenLibrary(const stri
         candidate.isbn = jsonStringFromArray(doc, "isbn");
         candidate.year = jsonIntField(doc, "first_publish_year");
         candidate.description = jsonFlexibleTextField(doc, "first_sentence");
+        const string workKey = jsonStringField(doc, "key");
         
         // ИСПРАВЛЕНО: Извлекаем рейтинг
         candidate.rating = jsonDoubleField(doc, "rating_average");
         if (candidate.rating <= 0) {
             candidate.rating = jsonDoubleField(doc, "ratings_average");
+        }
+        if (candidate.rating <= 0) {
+            candidate.rating = fetchOpenLibraryWorkRating(workKey);
         }
         
         // ИСПРАВЛЕНО: Извлекаем жанр из subject
