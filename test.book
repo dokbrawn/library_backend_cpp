@@ -1,0 +1,12 @@
+BEGIN_BOOK
+title=1984
+author=George Orwell
+genre=Fiction
+subgenre=Dystopia
+publisher=AST
+year=1949
+rating=4.8
+price=450
+age_rating=16+
+isbn=978-5-17-108831-3
+END_BOOK

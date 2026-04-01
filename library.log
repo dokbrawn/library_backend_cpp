@@ -1,0 +1,226 @@
+2026-03-24 23:52:44 [INFO] === Starting initialization ===
+2026-03-24 23:52:44 [INFO] PostgreSQL connection established.
+2026-03-24 23:52:44 [INFO] Storage opened successfully
+2026-03-24 23:52:44 [INFO] === Initialization complete ===
+2026-03-24 23:52:44 [INFO] === addOrUpdateBook called ===
+2026-03-24 23:52:44 [INFO] fetchFromNetwork: true
+2026-03-24 23:52:44 [INFO] Book title: 1984
+2026-03-24 23:52:44 [INFO] Book author: George Orwell
+2026-03-24 23:52:44 [INFO] Book genre: Fiction
+2026-03-24 23:52:44 [INFO] Book subgenre: Novel
+2026-03-24 23:52:44 [INFO] Fetching metadata from OpenLibrary API...
+2026-03-24 23:52:44 [INFO] API URL: https://openlibrary.org/search.json?q=978-5-17-108831-3&limit=1&fields=title,author_name,first_publish_year,isbn,publisher,cover_i
+2026-03-24 23:52:44 [INFO] Executing curl (attempt 1)
+2026-03-24 23:52:44 [DEBUG] Executing command: curl -sS --max-time 5 -H "User-Agent: LibraryBackendCPP/1.0" "https://openlibrary.org/search.json?q=978-5-17-108831-3&limit=1&fields=title,author_name,first_publish_year,isbn,publisher,cover_i" -w "\n__HTTP_CODE__:%{http_code}\n"
+2026-03-24 23:52:45 [DEBUG] Command exit code: 0
+2026-03-24 23:52:45 [INFO] Curl response length: 192
+2026-03-24 23:52:45 [INFO] HTTP Code: 0
+2026-03-24 23:52:45 [WARN] Retrying...
+2026-03-24 23:52:46 [INFO] Executing curl (attempt 2)
+2026-03-24 23:52:46 [DEBUG] Executing command: curl -sS --max-time 5 -H "User-Agent: LibraryBackendCPP/1.0" "https://openlibrary.org/search.json?q=978-5-17-108831-3&limit=1&fields=title,author_name,first_publish_year,isbn,publisher,cover_i" -w "\n__HTTP_CODE__:%{http_code}\n"
+2026-03-24 23:52:47 [DEBUG] Command exit code: 0
+2026-03-24 23:52:47 [INFO] Curl response length: 192
+2026-03-24 23:52:47 [INFO] HTTP Code: 0
+2026-03-24 23:52:47 [WARN] Retrying...
+2026-03-24 23:52:48 [INFO] Executing curl (attempt 3)
+2026-03-24 23:52:48 [DEBUG] Executing command: curl -sS --max-time 5 -H "User-Agent: LibraryBackendCPP/1.0" "https://openlibrary.org/search.json?q=978-5-17-108831-3&limit=1&fields=title,author_name,first_publish_year,isbn,publisher,cover_i" -w "\n__HTTP_CODE__:%{http_code}\n"
+2026-03-24 23:52:49 [DEBUG] Command exit code: 0
+2026-03-24 23:52:49 [INFO] Curl response length: 192
+2026-03-24 23:52:49 [INFO] HTTP Code: 0
+2026-03-24 23:52:49 [WARN] API unavailable after 3 attempts, using manual data
+2026-03-24 23:52:49 [WARN] API fetch failed, using manual data
+2026-03-24 23:52:49 [DEBUG] === Starting upsert ===
+2026-03-24 23:52:49 [DEBUG] Book title: 1984
+2026-03-24 23:52:49 [DEBUG] Book author: George Orwell
+2026-03-24 23:52:49 [DEBUG] Book genre: Fiction
+2026-03-24 23:52:49 [DEBUG] Book subgenre: Novel
+2026-03-24 23:52:49 [DEBUG] Creating/fetching genre: Fiction
+2026-03-24 23:52:49 [DEBUG] Genre ID: 23
+2026-03-24 23:52:49 [DEBUG] Genre ID result: 23
+2026-03-24 23:52:49 [DEBUG] Creating/fetching subgenre: Novel (genre_id=23)
+2026-03-24 23:52:49 [DEBUG] Subgenre ID: 23
+2026-03-24 23:52:49 [DEBUG] Subgenre ID result: 23
+2026-03-24 23:52:49 [DEBUG] Executing INSERT/UPDATE query
+2026-03-24 23:52:49 [ERROR] Book upsert SQL failed: ОШИБКА:  значение NULL в столбце "id" отношения "books" нарушает ограничение NOT NULL
+DETAIL:  Ошибочная строка содержит (null, 23, 1984, George Orwell, AST, 1949, 70x100/16, 4.7, 420, 12+, 978-5-17-108831-3, 10000, 2020-01-15, 2021-03-20|2022-06-10, , , , , 1, 2026-03-24 23:52:49.588547).
+
+2026-03-24 23:52:49 [INFO] Book upsert result: FAILED
+2026-03-24 23:56:28 [INFO] === Starting initialization ===
+2026-03-24 23:56:28 [INFO] PostgreSQL connection established.
+2026-03-24 23:56:28 [INFO] Storage opened successfully
+2026-03-24 23:56:28 [INFO] === Initialization complete ===
+2026-03-24 23:56:28 [INFO] === addOrUpdateBook called ===
+2026-03-24 23:56:28 [INFO] fetchFromNetwork: true
+2026-03-24 23:56:28 [INFO] Book title: 1984
+2026-03-24 23:56:28 [INFO] Book author: George Orwell
+2026-03-24 23:56:28 [INFO] Book genre: Fiction
+2026-03-24 23:56:28 [INFO] Book subgenre: Novel
+2026-03-24 23:56:28 [INFO] Fetching metadata from OpenLibrary API...
+2026-03-24 23:56:28 [INFO] API URL: https://openlibrary.org/search.json?q=978-5-17-108831-3&limit=1&fields=title,author_name,first_publish_year,isbn,publisher,cover_i
+2026-03-24 23:56:28 [INFO] Executing curl (attempt 1)
+2026-03-24 23:56:28 [DEBUG] Executing command: curl -sS --max-time 5 -H "User-Agent: LibraryBackendCPP/1.0" "https://openlibrary.org/search.json?q=978-5-17-108831-3&limit=1&fields=title,author_name,first_publish_year,isbn,publisher,cover_i" -w "\n__HTTP_CODE__:%{http_code}\n"
+2026-03-24 23:56:29 [DEBUG] Command exit code: 0
+2026-03-24 23:56:29 [INFO] Curl response length: 192
+2026-03-24 23:56:29 [INFO] HTTP Code: 0
+2026-03-24 23:56:29 [WARN] Retrying...
+2026-03-24 23:56:30 [INFO] Executing curl (attempt 2)
+2026-03-24 23:56:30 [DEBUG] Executing command: curl -sS --max-time 5 -H "User-Agent: LibraryBackendCPP/1.0" "https://openlibrary.org/search.json?q=978-5-17-108831-3&limit=1&fields=title,author_name,first_publish_year,isbn,publisher,cover_i" -w "\n__HTTP_CODE__:%{http_code}\n"
+2026-03-24 23:56:31 [DEBUG] Command exit code: 0
+2026-03-24 23:56:31 [INFO] Curl response length: 192
+2026-03-24 23:56:31 [INFO] HTTP Code: 0
+2026-03-24 23:56:31 [WARN] Retrying...
+2026-03-24 23:56:32 [INFO] Executing curl (attempt 3)
+2026-03-24 23:56:32 [DEBUG] Executing command: curl -sS --max-time 5 -H "User-Agent: LibraryBackendCPP/1.0" "https://openlibrary.org/search.json?q=978-5-17-108831-3&limit=1&fields=title,author_name,first_publish_year,isbn,publisher,cover_i" -w "\n__HTTP_CODE__:%{http_code}\n"
+2026-03-24 23:56:33 [DEBUG] Command exit code: 0
+2026-03-24 23:56:33 [INFO] Curl response length: 192
+2026-03-24 23:56:33 [INFO] HTTP Code: 0
+2026-03-24 23:56:33 [WARN] API unavailable after 3 attempts, using manual data
+2026-03-24 23:56:33 [WARN] API fetch failed, using manual data
+2026-03-24 23:56:33 [DEBUG] === Starting upsert ===
+2026-03-24 23:56:33 [DEBUG] Book title: 1984
+2026-03-24 23:56:33 [DEBUG] Book author: George Orwell
+2026-03-24 23:56:33 [DEBUG] Book genre: Fiction
+2026-03-24 23:56:33 [DEBUG] Book subgenre: Novel
+2026-03-24 23:56:33 [DEBUG] Creating/fetching genre: Fiction
+2026-03-24 23:56:33 [DEBUG] Genre ID: 24
+2026-03-24 23:56:33 [DEBUG] Genre ID result: 24
+2026-03-24 23:56:33 [DEBUG] Creating/fetching subgenre: Novel (genre_id=24)
+2026-03-24 23:56:33 [DEBUG] Subgenre ID: 24
+2026-03-24 23:56:33 [DEBUG] Subgenre ID result: 24
+2026-03-24 23:56:33 [DEBUG] Executing INSERT/UPDATE query
+2026-03-24 23:56:33 [ERROR] Book upsert SQL failed: ОШИБКА:  значение NULL в столбце "id" отношения "books" нарушает ограничение NOT NULL
+DETAIL:  Ошибочная строка содержит (null, 24, 1984, George Orwell, AST, 1949, 70x100/16, 4.7, 420, 12+, 978-5-17-108831-3, 10000, 2020-01-15, 2021-03-20|2022-06-10, , , , , 1, 2026-03-24 23:56:33.279564).
+
+2026-03-24 23:56:33 [INFO] Book upsert result: FAILED
+2026-03-25 00:15:23 [INFO] === Starting initialization ===
+2026-03-25 00:15:24 [INFO] PostgreSQL connection established.
+2026-03-25 00:15:24 [INFO] Storage opened successfully
+2026-03-25 00:15:24 [INFO] === Initialization complete ===
+2026-03-25 00:15:24 [INFO] === addOrUpdateBook called ===
+2026-03-25 00:15:24 [INFO] fetchFromNetwork: true
+2026-03-25 00:15:24 [INFO] Book title: 1984
+2026-03-25 00:15:24 [INFO] Book author: George Orwell
+2026-03-25 00:15:24 [INFO] Book genre: Fiction
+2026-03-25 00:15:24 [INFO] Book subgenre: Novel
+2026-03-25 00:15:24 [INFO] Fetching metadata from OpenLibrary API...
+2026-03-25 00:15:24 [INFO] API URL: https://openlibrary.org/search.json?q=978-5-17-108831-3&limit=1&fields=title,author_name,first_publish_year,isbn,publisher,cover_i
+2026-03-25 00:15:24 [INFO] Executing curl (attempt 1)
+2026-03-25 00:15:24 [DEBUG] Executing command: curl -sS --max-time 5 -H "User-Agent: LibraryBackendCPP/1.0" "https://openlibrary.org/search.json?q=978-5-17-108831-3&limit=1&fields=title,author_name,first_publish_year,isbn,publisher,cover_i" -w "\n__HTTP_CODE__:%{http_code}\n"
+2026-03-25 00:15:25 [DEBUG] Command exit code: 0
+2026-03-25 00:15:25 [INFO] Curl response length: 192
+2026-03-25 00:15:25 [INFO] HTTP Code: 0
+2026-03-25 00:15:25 [WARN] Retrying...
+2026-03-25 00:15:26 [INFO] Executing curl (attempt 2)
+2026-03-25 00:15:26 [DEBUG] Executing command: curl -sS --max-time 5 -H "User-Agent: LibraryBackendCPP/1.0" "https://openlibrary.org/search.json?q=978-5-17-108831-3&limit=1&fields=title,author_name,first_publish_year,isbn,publisher,cover_i" -w "\n__HTTP_CODE__:%{http_code}\n"
+2026-03-25 00:15:26 [DEBUG] Command exit code: 0
+2026-03-25 00:15:26 [INFO] Curl response length: 192
+2026-03-25 00:15:26 [INFO] HTTP Code: 0
+2026-03-25 00:15:26 [WARN] Retrying...
+2026-03-25 00:15:27 [INFO] Executing curl (attempt 3)
+2026-03-25 00:15:27 [DEBUG] Executing command: curl -sS --max-time 5 -H "User-Agent: LibraryBackendCPP/1.0" "https://openlibrary.org/search.json?q=978-5-17-108831-3&limit=1&fields=title,author_name,first_publish_year,isbn,publisher,cover_i" -w "\n__HTTP_CODE__:%{http_code}\n"
+2026-03-25 00:15:28 [DEBUG] Command exit code: 0
+2026-03-25 00:15:28 [INFO] Curl response length: 192
+2026-03-25 00:15:28 [INFO] HTTP Code: 0
+2026-03-25 00:15:28 [WARN] API unavailable after 3 attempts, using manual data
+2026-03-25 00:15:28 [WARN] API fetch failed, using manual data
+2026-03-25 00:15:28 [DEBUG] === Starting upsert ===
+2026-03-25 00:15:28 [DEBUG] Book title: 1984
+2026-03-25 00:15:28 [DEBUG] Book author: George Orwell
+2026-03-25 00:15:28 [DEBUG] Book genre: Fiction
+2026-03-25 00:15:28 [DEBUG] Book subgenre: Novel
+2026-03-25 00:15:28 [DEBUG] Creating/fetching genre: Fiction
+2026-03-25 00:15:28 [DEBUG] Genre ID: 25
+2026-03-25 00:15:28 [DEBUG] Genre ID result: 25
+2026-03-25 00:15:28 [DEBUG] Creating/fetching subgenre: Novel (genre_id=25)
+2026-03-25 00:15:28 [DEBUG] Subgenre ID: 25
+2026-03-25 00:15:28 [DEBUG] Subgenre ID result: 25
+2026-03-25 00:15:28 [DEBUG] Executing INSERT/UPDATE query
+2026-03-25 00:15:28 [ERROR] Book upsert SQL failed: ОШИБКА:  значение NULL в столбце "id" отношения "books" нарушает ограничение NOT NULL
+DETAIL:  Ошибочная строка содержит (null, 25, 1984, George Orwell, AST, 1949, 70x100/16, 4.7, 420, 12+, 978-5-17-108831-3, 10000, 2020-01-15, 2021-03-20|2022-06-10, , , , , 1, 2026-03-25 00:15:28.840593).
+
+2026-03-25 00:15:28 [INFO] Book upsert result: FAILED
+2026-03-25 00:55:09 [INFO] === Backend initialization started ===
+2026-03-25 00:55:09 [INFO] PostgreSQL connection established.
+2026-03-25 00:55:09 [INFO] === Backend initialized successfully ===
+2026-03-25 00:55:36 [INFO] === Backend initialization started ===
+2026-03-25 00:55:36 [INFO] PostgreSQL connection established.
+2026-03-25 00:55:36 [INFO] === Backend initialized successfully ===
+2026-03-25 00:55:36 [ERROR] Select failed: ОШИБКА:  столбец books.genre_id не существует
+LINE 9: LEFT JOIN genres ON genres.id = books.genre_id
+                                        ^
+HINT:  Возможно, предполагалась ссылка на столбец "books.subgenre_id".
+
+2026-03-25 00:55:36 [INFO] === Backend initialization started ===
+2026-03-25 00:55:36 [INFO] PostgreSQL connection established.
+2026-03-25 00:55:36 [INFO] === Backend initialized successfully ===
+2026-03-25 00:55:36 [INFO] === Backend initialization started ===
+2026-03-25 00:55:36 [INFO] PostgreSQL connection established.
+2026-03-25 00:55:36 [INFO] === Backend initialized successfully ===
+2026-03-25 00:55:36 [ERROR] Select failed: ОШИБКА:  столбец books.genre_id не существует
+LINE 9: LEFT JOIN genres ON genres.id = books.genre_id
+                                        ^
+HINT:  Возможно, предполагалась ссылка на столбец "books.subgenre_id".
+
+2026-03-25 00:55:55 [INFO] === Backend initialization started ===
+2026-03-25 00:55:55 [INFO] PostgreSQL connection established.
+2026-03-25 00:55:55 [INFO] === Backend initialized successfully ===
+2026-03-25 00:56:32 [INFO] === Backend initialization started ===
+2026-03-25 00:56:32 [INFO] PostgreSQL connection established.
+2026-03-25 00:56:32 [INFO] === Backend initialized successfully ===
+2026-03-25 00:56:36 [INFO] === Backend initialization started ===
+2026-03-25 00:56:36 [INFO] PostgreSQL connection established.
+2026-03-25 00:56:36 [INFO] === Backend initialized successfully ===
+2026-03-25 00:56:36 [ERROR] Select failed: ОШИБКА:  столбец books.genre_id не существует
+LINE 9: LEFT JOIN genres ON genres.id = books.genre_id
+                                        ^
+HINT:  Возможно, предполагалась ссылка на столбец "books.subgenre_id".
+
+2026-03-25 01:02:11 [INFO] Backend initialization started
+2026-03-25 01:02:11 [INFO] PostgreSQL connected
+2026-03-25 01:02:13 [INFO] Backend initialization started
+2026-03-25 01:02:13 [INFO] PostgreSQL connected
+2026-03-25 01:02:13 [ERROR] Select failed
+2026-03-25 01:03:42 [INFO] Backend initialization started
+2026-03-25 01:03:42 [INFO] PostgreSQL connected
+2026-03-25 01:04:00 [INFO] Backend initialization started
+2026-03-25 01:04:00 [INFO] PostgreSQL connected
+2026-03-25 01:05:11 [INFO] Backend initialization started
+2026-03-25 01:05:11 [INFO] PostgreSQL connected
+2026-03-25 01:08:10 [INFO] Backend initialization started
+2026-03-25 01:08:10 [INFO] PostgreSQL connected
+2026-03-25 01:08:26 [INFO] Backend initialization started
+2026-03-25 01:08:26 [INFO] PostgreSQL connected
+2026-03-25 01:10:18 [INFO] Backend initialization started
+2026-03-25 01:10:18 [INFO] PostgreSQL connected
+2026-03-25 01:10:18 [INFO] Book file parsed successfully: 1984
+2026-03-25 01:10:18 [DEBUG] Executing: curl -sS --max-time 5 -H "User-Agent: LibraryBackendCPP/1.0" "https://openlibrary.org/search.json?q=978-5-17-108831-3&limit=1&fields=title,author_name,first_publish_year,isbn,publisher,cover_i" -w "\n__HTTP_CODE__:%{http_code}\n"
+2026-03-25 01:11:42 [INFO] Backend initialization started
+2026-03-25 01:11:42 [INFO] PostgreSQL connected
+2026-03-25 01:14:34 [INFO] Backend initialization started
+2026-03-25 01:14:34 [INFO] PostgreSQL connected
+2026-03-25 01:14:34 [DEBUG] Executing: curl -sS --max-time 5 -H "User-Agent: LibraryBackendCPP/1.0" "https://openlibrary.org/search.json?q=978-5-17-108831-3&limit=1&fields=title,author_name,first_publish_year,isbn,publisher,cover_i" -w "\n__HTTP_CODE__:%{http_code}\n"
+2026-03-25 02:10:55 [ERROR] DB connect failed: connection to server at "localhost" (::1), port 5432 failed: Permission denied (0x0000271D/10013)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5432 failed: ВАЖНО:  пользователь "postgres" не прошёл проверку подлинности (по паролю)
+
+2026-03-25 02:11:13 [INFO] Migrations completed
+2026-03-25 02:11:13 [INFO] Backup completed: backup/library_backup.sql
+2026-03-25 02:11:29 [INFO] Book id=1 added/updated
+2026-03-25 02:12:50 [INFO] Book id=2 added/updated
+2026-03-25 02:13:36 [INFO] Book id=3 added/updated
+2026-03-25 02:18:49 [INFO] Migrations completed
+2026-03-25 02:19:07 [WARNING] OpenLibrary lookup failed for query=Мастер
+2026-03-25 02:32:51 [ERROR] DB connect failed: connection to server at "localhost" (::1), port 5432 failed: Permission denied (0x0000271D/10013)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5432 failed: ВАЖНО:  пользователь "postgres" не прошёл проверку подлинности (по паролю)
+
+2026-03-25 02:33:38 [INFO] Migrations completed
+2026-03-25 02:33:51 [WARNING] OpenLibrary lookup failed for query=Мастер
+2026-03-25 02:34:30 [WARNING] OpenLibrary lookup failed for query=Мастер и Маргарита
+2026-03-25 02:36:45 [INFO] Migrations completed
+2026-03-25 02:37:15 [INFO] Book id=4 added/updated
+2026-03-25 02:37:15 [DEBUG] Downloading cover: https://covers.openlibrary.org/b/id/12947486-L.jpg -> images/cover_9786254054112.jpg
+2026-03-25 02:37:15 [WARNING] Failed to download cover from https://covers.openlibrary.org/b/id/12947486-L.jpg
+2026-03-25 03:04:04 [INFO] Migrations completed
+2026-03-25 03:04:04 [INFO] Migrations completed
+2026-03-25 03:04:08 [INFO] Migrations completed
