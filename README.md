@@ -252,3 +252,42 @@ cd /workspace/library_backend_cpp
 - Подгрузка кандидатов из OpenLibrary / Google Books и перенос в форму книги.
 - Карточная витрина книг с обложками (локальный путь или URL), выделением выбранной карточки и редактированием.
 - Backend-логи в UI, чтобы видеть stderr/exit-коды каждой операции.
+
+### Важные уточнения по алгоритмам в UI
+- **QuickSort**: выполняется командой backend `sort` (в UI это кнопка `QuickSort`).
+- **OBST**: кнопка `OBST` теперь открывает отдельное окно со списком узлов дерева (`key/book_id/left/right`), а не только пишет в лог.
+- **Binary Search**: сначала вызывается backend `binary-search`; если backend не вернул результат (часто на смешанной локали/регистре), frontend автоматически делает fallback на `search`, чтобы кириллица и mixed-language запросы находились корректно.
+- **Сортировка по фамилии**: выбирайте поле `author (surname)` — backend сортирует авторов по извлечённой фамилии.
+- В сетевом поиске (`lookup`) теперь дополнительно подтягивается краткое описание (`first_sentence`, если доступно), а также жанр/рейтинг.
+- Таймауты `curl` смягчены (увеличен лимит ожидания), а служебные PostgreSQL NOTICE-сообщения скрыты из пользовательского stderr, чтобы лог в UI был чище.
+
+### Телефон / ARM / перенос
+- Текущий Flutter UI рассчитан на desktop-сценарий, где запускается **локальный `library_backend` бинарник**.
+- Для ARM (Linux ARM64) используйте папку `flutter_frontend_arm` (Docker/run-script).
+- Для телефона (Android/iOS) сам UI можно собрать, но backend-CLI как отдельный процесс там не запускается так же, как на Windows/Linux desktop; нужен отдельный мобильный backend-слой (FFI/embedded service/API).
+
+#### Пошагово: перенос на ARM (Linux ARM64, например Raspberry Pi)
+1. На ARM-устройстве установите Docker.
+2. Скопируйте проект на устройство.
+3. Выполните:
+   ```bash
+   cd library_backend_cpp
+   ./flutter_frontend_arm/run-arm.sh
+   ```
+4. Если хотите нативный ARM запуск без Docker:
+   - соберите `library_backend` под ARM (`cmake -S . -B build && cmake --build build`);
+   - в `flutter_frontend_windows` выполните `flutter pub get` и `flutter run -d linux`;
+   - перед запуском задайте `LIBRARY_BACKEND_BIN` на ARM-бинарник backend.
+
+#### Пошагово: перенос на телефон (Android)
+На сегодня это **не просто “скопировать папку”**, потому что текущая архитектура запускает desktop CLI-процесс backend.
+Рабочий путь для телефона:
+1. Оставить Flutter UI.
+2. Вынести backend в мобильный API/FFI-слой (например, C++ как библиотека через FFI или отдельный локальный сервис).
+3. Заменить в Flutter вызовы `Process.start(...)` на вызовы этого слоя.
+4. Собрать APK:
+   ```bash
+   cd flutter_frontend_windows
+   flutter build apk --release
+   ```
+5. Установить APK на телефон (`adb install build/app/outputs/flutter-apk/app-release.apk`).

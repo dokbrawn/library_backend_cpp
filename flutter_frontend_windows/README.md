@@ -21,3 +21,5 @@ flutter run -d windows
 - CRUD-редактор книги.
 - Подгрузка данных из OpenLibrary/Google Books и перенос в форму.
 - Поиск/сортировка/алгоритмы через backend (логика в backend, UI во frontend).
+- Сортировка по фамилии автора через поле `author (surname)`.
+- Для `binary-search` добавлен fallback на `search` для устойчивой работы с многоязычными запросами.

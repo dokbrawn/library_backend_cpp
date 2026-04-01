@@ -120,10 +120,60 @@ class _LibraryHomePageState extends State<LibraryHomePage> {
   Future<void> _binarySearch() async {
     final q = searchCtrl.text.trim();
     if (q.isEmpty) return;
-    await _runBackend(['binary-search', q]);
+    final result = await _runBackend(['binary-search', q]);
+    if (!mounted) return;
+    final lower = q.toLowerCase();
+    if (result.exitCode == 0 && result.stdout.contains('BEGIN_BOOK')) {
+      final rows = parseBooks(result.stdout);
+      if (rows.isNotEmpty) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Бинарный поиск: найдено'),
+            content: Text('${rows.first.title} — ${rows.first.author}\nISBN: ${rows.first.isbn}'),
+            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+          ),
+        );
+      }
+      return;
+    }
+    // Backend binary-search может быть чувствителен к локали/регистру для некоторых языков.
+    // Делаем fallback на search, чтобы кириллица и mixed-language запросы работали стабильно.
+    await _loadBooks(['search', lower]);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Бинарный поиск fallback: показаны результаты через обычный поиск.')),
+    );
   }
 
-  Future<void> _obst() => _runBackend(['obst']);
+  Future<void> _obst() async {
+    final result = await _runBackend(['obst']);
+    if (!mounted) return;
+    final lines = const LineSplitter()
+        .convert(result.stdout)
+        .where((e) => e.trim().isNotEmpty)
+        .toList();
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Узлы OBST (${lines.length})'),
+        content: SizedBox(
+          width: 680,
+          child: lines.isEmpty
+              ? const Text('OBST пуст (возможно нет ISBN в данных).')
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: lines.length,
+                  itemBuilder: (_, i) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(lines[i], style: const TextStyle(fontFamily: 'monospace')),
+                  ),
+                ),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Закрыть'))],
+      ),
+    );
+  }
 
   Future<void> _removeSelected() async {
     final id = int.tryParse(idCtrl.text.trim());
@@ -282,7 +332,7 @@ class _LibraryHomePageState extends State<LibraryHomePage> {
         children: [
           Row(
             children: [
-              Expanded(child: TextField(controller: backendPath, decoration: const InputDecoration(labelText: 'Backend binary path'))),
+              Expanded(child: TextField(controller: backendPath, decoration: const InputDecoration(labelText: 'Путь к backend бинарнику'))),
               const SizedBox(width: 8),
               FilledButton(onPressed: loading ? null : _initBackend, child: const Text('Init')),
               const SizedBox(width: 8),
@@ -295,14 +345,34 @@ class _LibraryHomePageState extends State<LibraryHomePage> {
             runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              SizedBox(width: 220, child: TextField(controller: searchCtrl, decoration: const InputDecoration(labelText: 'Search title/author'))),
-              FilledButton(onPressed: loading ? null : _search, child: const Text('Search')),
-              DropdownButton<String>(value: sortField, items: sortFields.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (v) => setState(() => sortField = v!)),
+              SizedBox(width: 220, child: TextField(controller: searchCtrl, decoration: const InputDecoration(labelText: 'Поиск по названию/автору'))),
+              FilledButton(onPressed: loading ? null : _search, child: const Text('Поиск')),
+              DropdownButton<String>(
+                value: sortField,
+                items: sortFields
+                    .map((e) => DropdownMenuItem(
+                          value: e,
+                          child: Text(e == 'author' ? 'автор (по фамилии)' : e),
+                        ))
+                    .toList(),
+                onChanged: (v) => setState(() => sortField = v!),
+              ),
               DropdownButton<String>(value: sortDirection, items: const [DropdownMenuItem(value: 'asc', child: Text('asc')), DropdownMenuItem(value: 'desc', child: Text('desc'))], onChanged: (v) => setState(() => sortDirection = v!)),
-              FilledButton.tonal(onPressed: loading ? null : _sort, child: const Text('QuickSort')),
-              FilledButton.tonal(onPressed: loading ? null : _binarySearch, child: const Text('Binary Search')),
+              FilledButton.tonal(
+                onPressed: loading
+                    ? null
+                    : () async {
+                        await _sort();
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('QuickSort выполнен на стороне backend.')),
+                        );
+                      },
+                child: const Text('Быстрая сортировка'),
+              ),
+              FilledButton.tonal(onPressed: loading ? null : _binarySearch, child: const Text('Бинарный поиск')),
               FilledButton.tonal(onPressed: loading ? null : _obst, child: const Text('OBST')),
-              Chip(label: Text('Books: ${books.length}')),
+              Chip(label: Text('Книг: ${books.length}')),
             ],
           ),
           const SizedBox(height: 10),
@@ -350,7 +420,7 @@ class _LibraryHomePageState extends State<LibraryHomePage> {
             ),
           ),
           const SizedBox(height: 8),
-          TextField(controller: logCtrl, minLines: 7, maxLines: 7, readOnly: true, decoration: const InputDecoration(labelText: 'Backend log')),
+          TextField(controller: logCtrl, minLines: 7, maxLines: 7, readOnly: true, decoration: const InputDecoration(labelText: 'Лог backend')),
         ],
       ),
     );
@@ -392,46 +462,54 @@ class _LibraryHomePageState extends State<LibraryHomePage> {
             const SizedBox(height: 8),
             Wrap(spacing: 8, runSpacing: 8, children: [
               SizedBox(width: 100, child: tf('ID', idCtrl)),
-              SizedBox(width: 230, child: tf('Title*', titleCtrl)),
-              SizedBox(width: 230, child: tf('Author*', authorCtrl)),
-              SizedBox(width: 150, child: tf('Year', yearCtrl)),
-              SizedBox(width: 150, child: tf('Rating', ratingCtrl)),
-              SizedBox(width: 230, child: tf('Genre', genreCtrl)),
-              SizedBox(width: 230, child: tf('Subgenre', subgenreCtrl)),
-              SizedBox(width: 230, child: tf('Publisher', publisherCtrl)),
-              SizedBox(width: 230, child: tf('Format', formatCtrl)),
-              SizedBox(width: 160, child: tf('Age rating', ageCtrl)),
+              SizedBox(width: 230, child: tf('Название*', titleCtrl)),
+              SizedBox(width: 230, child: tf('Автор*', authorCtrl)),
+              SizedBox(width: 150, child: tf('Год', yearCtrl)),
+              SizedBox(width: 150, child: tf('Рейтинг', ratingCtrl)),
+              SizedBox(width: 230, child: tf('Жанр', genreCtrl)),
+              SizedBox(width: 230, child: tf('Поджанр', subgenreCtrl)),
+              SizedBox(width: 230, child: tf('Издательство', publisherCtrl)),
+              SizedBox(width: 230, child: tf('Формат', formatCtrl)),
+              SizedBox(width: 160, child: tf('Возрастной рейтинг', ageCtrl)),
               SizedBox(width: 260, child: tf('ISBN', isbnCtrl)),
-              SizedBox(width: 180, child: tf('Total circulation', runCtrl)),
-              SizedBox(width: 200, child: tf('Print sign date', signDateCtrl)),
-              SizedBox(width: 280, child: tf('Additional prints', addPrintsCtrl)),
-              SizedBox(width: 420, child: tf('Cover path / URL', coverPathCtrl)),
-              SizedBox(width: 420, child: tf('License path', licensePathCtrl)),
+              SizedBox(width: 180, child: tf('Тираж', runCtrl)),
+              SizedBox(width: 200, child: tf('Дата подписи в печать', signDateCtrl)),
+              SizedBox(width: 280, child: tf('Доп. тиражи', addPrintsCtrl)),
+              SizedBox(width: 420, child: tf('Путь/URL обложки', coverPathCtrl)),
+              SizedBox(width: 420, child: tf('Путь лицензии', licensePathCtrl)),
             ]),
             const SizedBox(height: 8),
-            tf('Bibliographic ref (ГОСТ)', biblioCtrl),
+            tf('Библиографическая ссылка (ГОСТ)', biblioCtrl),
             const SizedBox(height: 8),
             Row(children: [
               Checkbox(value: fetchNetworkOnSave, onChanged: (v) => setState(() => fetchNetworkOnSave = v ?? true)),
-              const Text('Fetch network metadata on save'),
+              const Text('Подтянуть метаданные из сети при сохранении'),
             ]),
             Wrap(spacing: 8, runSpacing: 8, children: [
-              FilledButton(onPressed: loading ? null : _saveUpsert, child: const Text('Save / Upsert')),
-              FilledButton.tonal(onPressed: loading ? null : _removeSelected, child: const Text('Delete')),
-              OutlinedButton(onPressed: _clearForm, child: const Text('Clear form')),
+              FilledButton(onPressed: loading ? null : _saveUpsert, child: const Text('Сохранить / Обновить')),
+              FilledButton.tonal(onPressed: loading ? null : _removeSelected, child: const Text('Удалить')),
+              OutlinedButton(onPressed: _clearForm, child: const Text('Очистить форму')),
+              OutlinedButton.icon(
+                onPressed: () {
+                  setState(() => selectedBookId = null);
+                  FocusScope.of(context).unfocus();
+                },
+                icon: const Icon(Icons.exit_to_app),
+                label: const Text('Выйти из редактирования'),
+              ),
             ]),
             const Divider(height: 28),
             const Text('Подгрузка из сети', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Row(children: [
-              Expanded(child: TextField(controller: lookupCtrl, decoration: const InputDecoration(labelText: 'Ключевое слово (например: мастер и маргарита)'))),
+                  Expanded(child: TextField(controller: lookupCtrl, decoration: const InputDecoration(labelText: 'Ключевое слово (например: мастер и маргарита)'))),
               const SizedBox(width: 8),
               DropdownButton<String>(value: lookupSource, items: const [
                 DropdownMenuItem(value: 'openlibrary', child: Text('OpenLibrary')),
                 DropdownMenuItem(value: 'google', child: Text('Google Books')),
               ], onChanged: (v) => setState(() => lookupSource = v!)),
               const SizedBox(width: 8),
-              FilledButton(onPressed: loading ? null : _runLookup, child: const Text('Load from network')),
+              FilledButton(onPressed: loading ? null : _runLookup, child: const Text('Подгрузить из сети')),
             ]),
             const SizedBox(height: 8),
             SizedBox(
@@ -443,7 +521,13 @@ class _LibraryHomePageState extends State<LibraryHomePage> {
                   return Card(
                     child: ListTile(
                       title: Text('${c.title} — ${c.author}'),
-                      subtitle: Text('ISBN: ${c.isbn} | ${c.publisher} | ${c.year}'),
+                      subtitle: Text(
+                        'ISBN: ${c.isbn} | ${c.publisher} | ${c.year}\n'
+                        'Жанр: ${c.genre.isEmpty ? "-" : c.genre} | Рейтинг: ${c.rating.isEmpty ? "-" : c.rating}\n'
+                        '${c.description.isEmpty ? "Описание не найдено" : c.description}',
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       trailing: const Icon(Icons.download_for_offline),
                       onTap: () => _fillFromCandidate(c),
                     ),
@@ -494,6 +578,7 @@ class LookupCandidate {
   String year = '';
   String genre = '';
   String subgenre = '';
+  String description = '';
   String rating = '';
 }
 
@@ -565,6 +650,7 @@ List<LookupCandidate> parseCandidates(String text) {
       case 'year': cur.year = v; break;
       case 'genre': cur.genre = v; break;
       case 'subgenre': cur.subgenre = v; break;
+      case 'description': cur.description = v; break;
       case 'rating': cur.rating = v; break;
     }
   }
