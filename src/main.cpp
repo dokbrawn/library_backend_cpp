@@ -1,3 +1,15 @@
+#ifdef _WIN32
+#ifndef _HAS_STD_BYTE
+#define _HAS_STD_BYTE 0
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#endif
+
 #include "library_backend.h"
 #include <algorithm>
 #include <filesystem>
