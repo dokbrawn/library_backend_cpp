@@ -214,3 +214,41 @@ docker run --rm -it \
 ```
 
 Это изолирует ARM-окружение в отдельной папке/образе, при том что основной C++ проект можно продолжать тестировать в Windows.
+
+## Flutter frontend (новый основной GUI)
+
+По вашему ТЗ добавлен новый фронтенд на Flutter с акцентом на современный карточный интерфейс и полный вызов backend-команд (логика в backend, интерфейс во frontend).
+
+### Папка для Windows
+- `flutter_frontend_windows`
+- содержит Flutter приложение (`lib/main.dart`) и PowerShell-скрипт запуска `run-windows.ps1`.
+
+Запуск в PowerShell:
+
+```powershell
+cd library_backend_cpp
+cmake -S . -B build
+cmake --build build --config Release
+
+cd .\flutter_frontend_windows
+.\run-windows.ps1 -BackendPath "..\build\Release\library_backend.exe" -PgConn "host=localhost port=5432 dbname=library user=postgres password=123"
+```
+
+### Папка для ARM
+- `flutter_frontend_arm`
+- содержит отдельный `Dockerfile` и скрипт `run-arm.sh`.
+
+Запуск ARM-сценария:
+
+```bash
+cd /workspace/library_backend_cpp
+./flutter_frontend_arm/run-arm.sh
+```
+
+### Что покрыто во Flutter UI
+- Полный вызов backend-команд:
+  - `init`, `list`, `search`, `sort`, `binary-search`, `obst`, `upsert`, `remove`, `lookup`, `lookup-google`.
+- CRUD-форма книги со всеми полями, используемыми backend сериализацией.
+- Подгрузка кандидатов из OpenLibrary / Google Books и перенос в форму книги.
+- Карточная витрина книг с обложками (локальный путь или URL), выделением выбранной карточки и редактированием.
+- Backend-логи в UI, чтобы видеть stderr/exit-коды каждой операции.
