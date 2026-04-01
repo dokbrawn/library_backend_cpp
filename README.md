@@ -181,9 +181,10 @@ java -jar java_frontend/target/java-frontend-1.0.0.jar
 
 В UI можно:
 - инициализировать backend (`init`);
-- просматривать список книг (`list`);
+- просматривать список книг (`list`) в карточном виде;
 - выполнять поиск (`search`);
-- сортировать (`sort`).
+- сортировать (`sort`);
+- видеть обложки книг (из `cover_image_path` или `cover_url`) и ключевые метаданные на карточке.
 
 Поле `Backend binary path` позволяет задать путь к бинарнику `library_backend` вручную.
 
